@@ -1,0 +1,29 @@
+public with sharing class OpportunityLineItemService {
+    public static Map<Id, List<OpportunityLineItem>> getLineItemsByOppIds(Set<Id> oppIds) {
+        Map<Id, List<OpportunityLineItem>> oppMap = new Map<Id, List<OpportunityLineItem>>();
+
+        // 1. 방어 코드 (Null 및 Empty 체크)
+        if (oppIds == null || oppIds.isEmpty()) {
+            return oppMap;
+        }
+
+        // 2. OpportunityLineItem 자체를 조회
+        List<OpportunityLineItem> lineItems = [
+            SELECT Id, OpportunityId, Quantity, UnitPrice, TotalPrice 
+            FROM OpportunityLineItem 
+            WHERE OpportunityId IN :oppIds
+        ];
+
+        // 3. 1:N 맵 적재 (키: OpportunityId, 값: List<OpportunityLineItem>)
+        for (OpportunityLineItem oli : lineItems) {
+            if (oppMap.containsKey(oli.OpportunityId)) {
+                oppMap.get(oli.OpportunityId).add(oli);
+            } else {
+                oppMap.put(oli.OpportunityId, new List<OpportunityLineItem>{oli});
+            }
+        }
+
+        // 4. for 루프가 끝난 뒤 최종 반환
+        return oppMap;
+    }
+}
